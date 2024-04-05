@@ -90,7 +90,7 @@ class StarGAN(nn.Module):
             torch.save(self.G.state_dict(), "./model/startgan_g.pth")
             torch.save(self.D.state_dict(), "./model/startgan_d.pth")
 
-input_path = 'D:/HK2-3/Nhận dạng/Face_Aging-main/Face_Aging-main/All-Age-Faces Dataset/10_images/'
+input_path = './10_images/'
 
 x, label = GetDataBase(input_path)
 label = torch.tensor(label)
