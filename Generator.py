@@ -62,7 +62,7 @@ class Generator(nn.Module):
 
         #64 -> 3
         self.layers.append(nn.Conv2d(conv_dim, 3, kernel_size=7, stride=1, padding=3, bias=False,device=self.device))
-        self.layers.append(nn.Tanh())
+        self.layers.append(nn.Sigmoid())
 
     def forward(self, x, c):
         #x.size = 1x3x300x300 
@@ -74,8 +74,9 @@ class Generator(nn.Module):
         c = c.float()  # Cast c tensor to float32
 
         new_x = torch.cat([x, c], dim=1).to(self.device)
-
-        return self.layers(new_x)   
+        e = self.layers(new_x)   
+        print("E:",e)
+        return e
 
 
 
