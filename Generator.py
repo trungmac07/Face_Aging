@@ -67,10 +67,20 @@ class Generator(nn.Module):
     def forward(self, x, c):
         #x.size = 1x3x300x300 
         #c.size = 1x5x300x300
-
         c = c.view(c.size(0), c.size(1), 1, 1)
+        print(c.shape)
         c = c.repeat(1, 1, x.size(2), x.size(3))
+        print(c.shape)
+
+        x = x.float()  # Cast input tensor to float32
+        c = c.float()  # Cast c tensor to float32
+        # c = c.view(1, 1, c.size(0), c.size(1))
+        # print(c.shape)
+        # c = c.repeat(x.size(1), x.size(2), 1, 1)
+        # print(c.shape)
+
         x = torch.cat([x, c], dim=1)
+        print(x.shape)
         return self.layers(x)   
 
 
