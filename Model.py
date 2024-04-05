@@ -41,8 +41,8 @@ class StarGAN(nn.Module):
         x_data_loader = torch.utils.data.DataLoader(x_train, batch_size=batch_size)
         labels_data_loader = torch.utils.data.DataLoader(labels, batch_size=batch_size)
 
-        d_optimizer = torch.optim.Adam(self.D.parameters())
-        g_optimizer = torch.optim.Adam(self.G.parameters())
+        d_optimizer = torch.optim.Adam(self.D.parameters(),lr = 0.005)
+        g_optimizer = torch.optim.Adam(self.G.parameters(),lr = 0.005)
 
         for epoch in range(n_epochs):
 
@@ -55,7 +55,6 @@ class StarGAN(nn.Module):
                 x = x_data.to(self.device)
                 l = labels_data.to(self.device)
                 
-                d_optimizer.zero_grad()
 
                 # Discriminator training
                 print(f"Training Discriminator Process:")
@@ -71,7 +70,8 @@ class StarGAN(nn.Module):
 
                 print(f"\tForwarding Discriminator")
                 d_res, d_label = self.D(d_train_data)
-
+                
+                d_optimizer.zero_grad()
                 d_loss = self.discriminator_loss(real_res, d_res, label_res, d_label)
                 print(f"\tD_loss:{d_loss}")
                 d_loss.backward()
@@ -80,8 +80,7 @@ class StarGAN(nn.Module):
                 # Generator training
                 if epoch % self.n_critic == 0:
                     print("Training Generator")
-                    g_optimizer.zero_grad()
-
+                    
                     print("\tGenerating Fake Image")
                     x_fake = self.G(x, random_l)
 
@@ -93,6 +92,7 @@ class StarGAN(nn.Module):
 
                     print("\tGenerating Fake Image")
                     x_fake2 = self.G(x_fake, l)
+                    g_optimizer.zero_grad()
                     g_loss = self.generator_loss(g_real_res, res, random_l, label, x, x_fake2)
                     print(f"\tG_loss:{g_loss}")
 
@@ -106,7 +106,7 @@ class StarGAN(nn.Module):
             torch.save(self.G.state_dict(), "./model/startgan_g.pth")
             torch.save(self.D.state_dict(), "./model/startgan_d.pth")
 
-input_path = 'D:/HK2-3/Nhận dạng/Face_Aging-main/Face_Aging-main/All-Age-Faces Dataset/10_images/'
+input_path = './10_images/'
 
 x, label = GetDataBase(input_path)
 label = torch.tensor(label)
