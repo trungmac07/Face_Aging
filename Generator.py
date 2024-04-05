@@ -75,7 +75,7 @@ class Generator(nn.Module):
 
         new_x = torch.cat([x, c], dim=1).to(self.device)
         e = self.layers(new_x)   
-        print("E:",e)
+   
         return e
 
 

@@ -8,10 +8,10 @@ from Discriminator import *
 from ReadImage import *
 
 class StarGAN(nn.Module):
-    def __init__(self, l_cls=1, l_rec=10, n_critic=1, device='cuda' if torch.cuda.is_available() else 'cpu'):
+    def __init__(self, l_cls=1, l_rec=10, n_critic=1, device='cuda' if torch.cuda.is_available() else 'cpu', G=None, D=None):
         super().__init__()
-        self.G = Generator()
-        self.D = Discriminator()
+        self.G = G if G != None else Generator()
+        self.D = D if D != None else Discriminator()
         self.l_cls = l_cls
         self.l_rec = l_rec
         self.n_critic = n_critic
@@ -22,7 +22,8 @@ class StarGAN(nn.Module):
         predicted_res = predicted_res.float().to(self.device)
         real_labels = real_labels.float().to(self.device)
         predicted_labels = predicted_labels.float().to(self.device)
-        return self.l_cls * F.cross_entropy(predicted_labels, real_labels) - F.binary_cross_entropy(predicted_res, real_res)
+    
+        return self.l_cls * F.cross_entropy(predicted_labels, real_labels) + F.binary_cross_entropy(predicted_res, real_res)
 
     def generator_loss(self, real_res, predicted_res, real_labels, predicted_labels, x, x_rec):
         real_res = real_res.float().to(self.device)
@@ -33,10 +34,13 @@ class StarGAN(nn.Module):
         x_rec = x_rec.float().to(self.device)
         
         return (self.l_cls * F.cross_entropy(predicted_labels, real_labels) +
-                self.l_rec * torch.mean(torch.abs(x - x_rec)) +
+                self.l_rec * torch.mean(torch.abs(x - x_rec)) -
                 F.binary_cross_entropy(predicted_res, real_res))
 
-    def train(self, x_train, labels, n_epochs=10, batch_size=32):
+    def fit(self, x_train, labels, n_epochs=10, batch_size=32):
+
+        self.G.train()
+        self.D.train()
 
         x_data_loader = torch.utils.data.DataLoader(x_train, batch_size=batch_size)
         labels_data_loader = torch.utils.data.DataLoader(labels, batch_size=batch_size)
@@ -58,7 +62,7 @@ class StarGAN(nn.Module):
 
                 # Discriminator training
                 print(f"Training Discriminator Process:")
-                random_labels = torch.randint(0, 5, (batch_size,), device=self.device)
+                random_labels = torch.randint(0, 5, (x.size(0),), device=self.device)
                 random_l = F.one_hot(random_labels, num_classes=5).to(self.device)
                 print(f"\tGenerating Fake Image")
                 fake_img = self.G(x, random_l)
@@ -102,9 +106,13 @@ class StarGAN(nn.Module):
             print(f"Epoch [{epoch + 1}/{n_epochs}], D Loss: {d_loss.item()}, G Loss: {g_loss.item()}")
 
             # Save models
-            torch.save(self.state_dict(), "./model/startgan.pth")
-            torch.save(self.G.state_dict(), "./model/startgan_g.pth")
-            torch.save(self.D.state_dict(), "./model/startgan_d.pth")
+            torch.save(self.state_dict(), "./model/stargan.pth")
+            torch.save(self.G.state_dict(), "./model/stargan_g.pth")
+            torch.save(self.D.state_dict(), "./model/stargan_d.pth")
+
+
+
+
 
 input_path = './10_images/'
 
@@ -112,5 +120,6 @@ x, label = GetDataBase(input_path)
 label = torch.tensor(label)
 
 model = StarGAN()
-model.train(x_train=x, labels=label)
+model.train()
+model.fit(x_train=x, labels=label)
 
