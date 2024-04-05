@@ -66,7 +66,7 @@ class StarGAN(nn.Module):
 
                 d_train_data = torch.cat((fake_img, x), dim= 0)
 
-                real_res = torch.cat((torch.zeros(batch_size), torch.ones(batch_size))).to(self.device)
+                real_res = torch.cat((torch.zeros(x.size(0)), torch.ones(x.size(0)))).to(self.device)
                 label_res = torch.cat([random_l, l], dim= 0)
 
                 print(f"\tForwarding Discriminator")
@@ -88,7 +88,8 @@ class StarGAN(nn.Module):
                     print("\tForwarding Discriminator")
                     res, label = self.D(x_fake)
 
-                    g_real_res = torch.zeros(batch_size).to(self.device)    
+                    g_real_res = torch.zeros(x.size(0)).to(self.device)
+                    x_fake2 = self.G(x_fake, l)
 
                     print("\tGenerating Fake Image")
                     x_fake2 = self.G(x_fake, l)
@@ -105,7 +106,7 @@ class StarGAN(nn.Module):
             torch.save(self.G.state_dict(), "./model/startgan_g.pth")
             torch.save(self.D.state_dict(), "./model/startgan_d.pth")
 
-input_path = './10_images/'
+input_path = 'D:/HK2-3/Nhận dạng/Face_Aging-main/Face_Aging-main/All-Age-Faces Dataset/10_images/'
 
 x, label = GetDataBase(input_path)
 label = torch.tensor(label)

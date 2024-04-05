@@ -72,6 +72,8 @@ class Generator(nn.Module):
 
         x = x.float()  # Cast input tensor to float32
         c = c.float()  # Cast c tensor to float32
+        print(c.shape)
+        print(x.shape)
 
         new_x = torch.cat([x, c], dim=1).to(self.device)
 
