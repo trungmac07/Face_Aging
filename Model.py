@@ -21,7 +21,6 @@ class StarGAN(nn.Module):
         predicted_res = predicted_res.float()
         real_labels = real_labels.float()
         predicted_labels = predicted_labels.float()
-        print(real_res.shape, predicted_res.shape, real_labels.shape, predicted_labels.shape)
         return self.l_cls * F.cross_entropy(predicted_labels, real_labels) - F.binary_cross_entropy(predicted_res, real_res)
 
     def generator_loss(self, real_res, predicted_res, real_labels, predicted_labels, x, x_rec):
@@ -31,7 +30,7 @@ class StarGAN(nn.Module):
         predicted_labels = predicted_labels.float()
         x = x.float()
         x_rec = x_rec.float()
-        
+
         return (self.l_cls * F.cross_entropy(predicted_labels, real_labels) +
                 self.l_rec * torch.mean(torch.abs(x - x_rec)) +
                 F.binary_cross_entropy(predicted_res, real_res))
@@ -45,7 +44,10 @@ class StarGAN(nn.Module):
         g_optimizer = torch.optim.Adam(self.G.parameters())
 
         for epoch in range(n_epochs):
+            count = 0 
             for x_data, labels_data in zip(x_data_loader, labels_data_loader):
+                count+=1 
+                print(count)
                 x = x_data.to(device)
                 x = x.permute(0, 3, 1, 2)
                 l = labels_data.to(device)
@@ -53,15 +55,15 @@ class StarGAN(nn.Module):
                 d_optimizer.zero_grad()
 
                 # Discriminator training
-                random_labels = torch.randint(0, 5, (batch_size,), device=device)
+                
+                random_labels = torch.randint(0, 5, (x.size(0),), device=device)
                 random_l = F.one_hot(random_labels, num_classes=5)
 
                 fake_img = self.G(x, random_l)
 
                 d_train_data = torch.cat((fake_img, x), dim= 0)
-                print(d_train_data.shape)
 
-                real_res = torch.cat((torch.zeros(batch_size), torch.ones(batch_size))).to(device)
+                real_res = torch.cat((torch.zeros(x.size(0)), torch.ones(x.size(0)))).to(device)
                 label_res = torch.cat([random_l, l], dim= 0)
 
                 d_res, d_label = self.D(d_train_data)
@@ -76,7 +78,7 @@ class StarGAN(nn.Module):
                     x_fake = self.G(x, random_l)
                     res, label = self.D(x_fake)
 
-                    g_real_res = torch.zeros(batch_size).to(device)
+                    g_real_res = torch.zeros(x.size(0)).to(device)
                     x_fake2 = self.G(x_fake, l)
 
                     g_loss = self.generator_loss(g_real_res, res, random_l, label, x, x_fake2)
@@ -90,7 +92,7 @@ class StarGAN(nn.Module):
             torch.save(self.G.state_dict(), "./model/startgan_g.pth")
             torch.save(self.D.state_dict(), "./model/startgan_d.pth")
 
-input_path = './10_images/'
+input_path = 'D:/HK2-3/Nhận dạng/Face_Aging-main/Face_Aging-main/All-Age-Faces Dataset/10_images/'
 
 x, label = GetDataBase(input_path)
 label = torch.tensor(label)
