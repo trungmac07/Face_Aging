@@ -28,19 +28,18 @@ class Generator(nn.Module):
         self.layers = nn.Sequential()
 
         #3+c_dim -> 64
-        self.layers.append(nn.Conv2d(3+c_dim, conv_dim, kernel_size=7, stride=1, padding=3, bias=False))
+        self.layers.append(nn.Conv2d(3 + c_dim, conv_dim, kernel_size=7, stride=1, padding=3, bias=False))
         self.layers.append(nn.InstanceNorm2d(conv_dim, affine=True, track_running_stats=True))
         self.layers.append(nn.ReLU(inplace=True))
 
-
         #encoder
         #64 -> 128
-        self.layers.append(nn.Conv2d(conv_dim, conv_dim*2, kernel_size=5, stride=2, padding=1, bias=False))
+        self.layers.append(nn.Conv2d(conv_dim, conv_dim*2, kernel_size=4, stride=2, padding=1, bias=False))
         self.layers.append(nn.InstanceNorm2d(conv_dim*2, affine=True, track_running_stats=True))
         self.layers.append(nn.ReLU(inplace=True))
 
         #128 -> 256
-        self.layers.append(nn.Conv2d(conv_dim*2, conv_dim*4, kernel_size=5, stride=2, padding=1, bias=False))
+        self.layers.append(nn.Conv2d(conv_dim*2, conv_dim*4, kernel_size=4, stride=2, padding=1, bias=False))
         self.layers.append(nn.InstanceNorm2d(conv_dim*4, affine=True, track_running_stats=True))
         self.layers.append(nn.ReLU(inplace=True))
 
@@ -50,37 +49,30 @@ class Generator(nn.Module):
 
         #decoder
         #256 -> 128
-        self.layers.append(nn.Conv2d(conv_dim*4, conv_dim*2, kernel_size=5, stride=2, padding=1, bias=False))
+        self.layers.append(nn.ConvTranspose2d(conv_dim*4, conv_dim*2, kernel_size=4, stride=2, padding=1, bias=False))
         self.layers.append(nn.InstanceNorm2d(conv_dim*2, affine=True, track_running_stats=True))
         self.layers.append(nn.ReLU(inplace=True))
 
         #128 -> 64
-        self.layers.append(nn.Conv2d(conv_dim*2, conv_dim, kernel_size=5, stride=2, padding=1, bias=False))
+        self.layers.append(nn.ConvTranspose2d(conv_dim*2, conv_dim, kernel_size=4, stride=2, padding=1, bias=False))
         self.layers.append(nn.InstanceNorm2d(conv_dim, affine=True, track_running_stats=True))
         self.layers.append(nn.ReLU(inplace=True))
 
         #64 -> 3
-        self.layers.append(nn.Conv2d(conv_dim, 3, kernel_size=5, stride=2, padding=1, bias=False))
-        self.layers.append(nn.InstanceNorm2d(conv_dim, affine=True, track_running_stats=True))
+        self.layers.append(nn.Conv2d(conv_dim, 3, kernel_size=7, stride=1, padding=3, bias=False))
         self.layers.append(nn.Tanh())
 
     def forward(self, x, c):
         #x.size = 1x3x300x300 
         #c.size = 1x5x300x300
         c = c.view(c.size(0), c.size(1), 1, 1)
-        print(c.shape)
         c = c.repeat(1, 1, x.size(2), x.size(3))
-        print(c.shape)
 
         x = x.float()  # Cast input tensor to float32
         c = c.float()  # Cast c tensor to float32
-        # c = c.view(1, 1, c.size(0), c.size(1))
-        # print(c.shape)
-        # c = c.repeat(x.size(1), x.size(2), 1, 1)
-        # print(c.shape)
 
         x = torch.cat([x, c], dim=1)
-        print(x.shape)
+
         return self.layers(x)   
 
 
