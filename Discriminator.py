@@ -25,7 +25,9 @@ class Discriminator(nn.Module):
         self.conv1.append(nn.Conv2d(curr_dim, 1, kernel_size=3, stride=2, padding=1, bias=False, device=self.device))
         self.conv1.append(nn.Sigmoid())
 
-        self.conv2 = nn.Conv2d(curr_dim, c_dim, kernel_size=kernel_size, bias=False,device=self.device)
+        self.conv2 = nn.Sequential()
+        self.conv2.append(nn.Conv2d(curr_dim, c_dim, kernel_size=kernel_size, bias=False,device=self.device))
+        self.conv2.append(nn.Softmax())
 
     def forward(self, x):
         x = x.float().to(self.device)  # Cast input tensor to float32
