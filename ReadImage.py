@@ -1,6 +1,7 @@
 import os
 from PIL import Image
 import numpy as np
+import torch 
 
 def read_image(inputFile):
 	img = np.asarray(Image.open(inputFile))
@@ -34,7 +35,7 @@ def GetDataBase(folder_path):
             else:
                 label = [0, 0, 0, 0, 1]
             
-            image_vector.append(image)
+            image_vector.append(torch.Tensor(image).permute(2,0,1))
             label_vector.append(label)
 
     return image_vector, label_vector  
