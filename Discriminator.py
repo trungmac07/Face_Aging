@@ -1,40 +1,48 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+import tensorflow as tf
 import numpy as np
 
-class Discriminator(nn.Module):
-    def __init__(self, img_size = 128, conv_dim = 64, c_dim = 5, device='cuda' if torch.cuda.is_available() else 'cpu'):
+class Discriminator(tf.keras.Model):
+    def __init__(self, image_size=128, conv_dim=64, chan_dim=5):
         super().__init__()
-        self.device = device
 
-        layers = []
-        layers.append(nn.Conv2d(3, conv_dim, kernel_size=4, stride=2, padding=1,device=self.device))
-        layers.append(nn.LeakyReLU(0.01))
+        self.d_layers = tf.keras.Sequential()
+        self.d_layers.add(tf.keras.Input(shape=(image_size, image_size, 3)))
+        self.d_layers.add(tf.keras.layers.ZeroPadding2D(padding=(1, 1)))
+        self.d_layers.add(tf.keras.layers.Conv2D(filters=conv_dim,
+                                               kernel_size=4,
+                                               strides=2))
+        self.d_layers.add(tf.keras.layers.LeakyReLU(0.01))
 
         curr_dim = conv_dim
         for i in range(1, 6):
-            layers.append(nn.Conv2d(curr_dim, curr_dim*2, kernel_size=4, stride=2, padding=1,device=self.device))
-            layers.append(nn.LeakyReLU(0.01))
-            curr_dim = curr_dim * 2
+            self.d_layers.add(tf.keras.layers.ZeroPadding2D(padding=(1, 1)))
+            self.d_layers.add(tf.keras.layers.Conv2D(filters=curr_dim*2,
+                                                kernel_size=4,
+                                                strides=2))
+            self.d_layers.add(tf.keras.layers.LeakyReLU(0.01))
+            curr_dim *= 2
 
-        kernel_size = int(img_size / np.power(2, 6))
-        self.layers = nn.Sequential(*layers)
+        self.src_layer = tf.keras.Sequential()
+        self.src_layer.add(tf.keras.layers.ZeroPadding2D(padding=(1, 1)))
+        self.src_layer.add(tf.keras.layers.Conv2D(filters=1,
+                                            kernel_size=3,
+                                            strides=1,
+                                            use_bias=False))
+        #self.src_layer.add(tf.keras.layers.AveragePooling2D(pool_size=(2,2), strides=(1,1), padding='valid'))
 
-        self.conv1 = nn.Sequential()
-        self.conv1.append(nn.Conv2d(curr_dim, 1, kernel_size=3, stride=2, padding=1, bias=False, device=self.device))
-        self.conv1.append(nn.Sigmoid())
+        kernel_size = int(image_size / np.power(2, 6))
+        self.cls_layer = tf.keras.Sequential()
+        self.cls_layer.add(tf.keras.layers.Conv2D(filters=chan_dim,
+                                            kernel_size=kernel_size,
+                                            strides=1,
+                                            use_bias=False))
+        # self.cls_layer.add(tf.keras.layers.Softmax(axis=1))
+        self.cls_layer.add(tf.keras.layers.Softmax())
 
-        self.conv2 = nn.Sequential()
-        self.conv2.append(nn.Conv2d(curr_dim, c_dim, kernel_size=kernel_size, bias=False,device=self.device))
-        self.conv2.append(nn.Softmax())
+    def call(self, x, training = True):
+        z = self.d_layers(x)
 
-    def forward(self, x):
-        x = x.float().to(self.device)  # Cast input tensor to float32
+        src_res = self.src_layer(z, training = training)
+        cls_res = self.cls_layer(z, training = training)
 
-        res = self.layers(x)
-
-        fake = self.conv1(res)
-        label = self.conv2(res)
-
-        return fake.view(fake.size(0)), label.view(label.size(0), label.size(1))
+        return src_res, tf.reshape(cls_res, (tf.shape(cls_res)[0], tf.shape(cls_res)[3]))

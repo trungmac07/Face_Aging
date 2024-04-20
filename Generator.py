@@ -1,87 +1,99 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+import tensorflow as tf
 import numpy as np
 
 
-class ResidualBlock(nn.Module):
-    """Residual Block with instance normalization."""
-    def __init__(self, dim_in, dim_out, device):
-        super(ResidualBlock, self).__init__()
-        self.device = device
-        self.layers = nn.Sequential(
-            nn.Conv2d(dim_in, dim_out, kernel_size=3, stride=1, padding=1, bias=False,device=self.device),
-            nn.InstanceNorm2d(dim_out, affine=True, track_running_stats=True,device=self.device),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(dim_out, dim_out, kernel_size=3, stride=1, padding=1, bias=False,device=self.device),
-            nn.InstanceNorm2d(dim_out, affine=True, track_running_stats=True,device=self.device),
-        )
-
-    def forward(self, x):
-        return x + self.layers(x)
-
-
-class Generator(nn.Module):
-    """Generator network."""
-    def __init__(self, conv_dim=64, c_dim=5, device='cuda' if torch.cuda.is_available() else 'cpu'):
+class ResidualBlock(tf.keras.Model):
+    def __init__(self, dim_out):
         super().__init__()
-        self.device = device
 
-        self.layers = nn.Sequential()
+        self.r_layers = tf.keras.Sequential()
+        self.r_layers.add(tf.keras.layers.ZeroPadding2D(padding=(1, 1)))
+        self.r_layers.add(tf.keras.layers.Conv2D(filters=dim_out,
+                                               kernel_size=3,
+                                               strides=1,
+                                               use_bias=False))
+        self.r_layers.add(tf.keras.layers.BatchNormalization(axis=3))
+        # self.r_layers.add(tf.keras.layers.BatchNormalization(axis=[0,3]))
+        self.r_layers.add(tf.keras.layers.ReLU())
+        self.r_layers.add(tf.keras.layers.ZeroPadding2D(padding=(1, 1)))
+        self.r_layers.add(tf.keras.layers.Conv2D(filters=dim_out,
+                                               kernel_size=3,
+                                               strides=1,
+                                               use_bias=False))
+        self.r_layers.add(tf.keras.layers.BatchNormalization(axis=3))
+        # self.r_layers.add(tf.keras.layers.BatchNormalization(axis=[0,3]))
 
-        #3+c_dim -> 64
-        self.layers.append(nn.Conv2d(3 + c_dim, conv_dim, kernel_size=7, stride=1, padding=3, bias=False,device=self.device))
-        self.layers.append(nn.InstanceNorm2d(conv_dim, affine=True, track_running_stats=True,device=self.device))
-        self.layers.append(nn.ReLU(inplace=True))
+    def call(self, x, training = True):
+        return x + self.r_layers(x, training = training )
 
-        #encoder
-        #64 -> 128
-        self.layers.append(nn.Conv2d(conv_dim, conv_dim*2, kernel_size=4, stride=2, padding=1, bias=False,device=self.device))
-        self.layers.append(nn.InstanceNorm2d(conv_dim*2, affine=True, track_running_stats=True,device=self.device))
-        self.layers.append(nn.ReLU(inplace=True))
+class Generator(tf.keras.Model):
+    def __init__(self, image_size=128, conv_dim=64, chan_dim=5):
+        super().__init__()
 
-        #128 -> 256
-        self.layers.append(nn.Conv2d(conv_dim*2, conv_dim*4, kernel_size=4, stride=2, padding=1, bias=False,device=self.device))
-        self.layers.append(nn.InstanceNorm2d(conv_dim*4, affine=True, track_running_stats=True,device=self.device))
-        self.layers.append(nn.ReLU(inplace=True))
+        self.g_layers = tf.keras.Sequential()
+        self.g_layers.add(tf.keras.Input(shape=(image_size, image_size, 3+chan_dim)))
+        self.g_layers.add(tf.keras.layers.ZeroPadding2D(padding=(3, 3)))
+        self.g_layers.add(tf.keras.layers.Conv2D(filters=conv_dim,
+                                               kernel_size=7,
+                                               strides=1,
+                                               use_bias=False))
+        self.g_layers.add(tf.keras.layers.BatchNormalization(axis=3))
+        # self.r_layers.add(tf.keras.layers.BatchNormalization(axis=[0,3]))
+        self.g_layers.add(tf.keras.layers.ReLU())
 
-        #transformation layers
+        # Down-sampling layers
+        curr_dim = conv_dim
+        for i in range(2):
+            self.g_layers.add(tf.keras.layers.ZeroPadding2D(padding=(1, 1)))
+            self.g_layers.add(tf.keras.layers.Conv2D(filters=curr_dim*2,
+                                                kernel_size=4,
+                                                strides=2,
+                                                use_bias=False))
+            self.g_layers.add(tf.keras.layers.BatchNormalization(axis=3))
+            # self.r_layers.add(tf.keras.layers.BatchNormalization(axis=[0,3]))
+            self.g_layers.add(tf.keras.layers.ReLU())
+            curr_dim *= 2
+
+        # # Bottleneck layers
         for i in range(6):
-            self.layers.append(ResidualBlock(conv_dim*4,conv_dim*4,device=self.device))
+            self.g_layers.add(ResidualBlock(dim_out=curr_dim))
 
-        #decoder
-        #256 -> 128
-        self.layers.append(nn.ConvTranspose2d(conv_dim*4, conv_dim*2, kernel_size=4, stride=2, padding=1, bias=False,device=self.device))
-        self.layers.append(nn.InstanceNorm2d(conv_dim*2, affine=True, track_running_stats=True,device=self.device))
-        self.layers.append(nn.ReLU(inplace=True))
+        # # Up-sampling layers
+        for i in range(2):
+            # self.g_layers.add(tf.keras.layers.ZeroPadding2D(padding=1))
+            self.g_layers.add(tf.keras.layers.Conv2DTranspose(filters=curr_dim//2,
+                                                              kernel_size=4,
+                                                              padding='same',
+                                                              strides=2,
+                                                              use_bias=False))
+            self.g_layers.add(tf.keras.layers.BatchNormalization(axis=3))
+            # self.r_layers.add(tf.keras.layers.BatchNormalization(axis=[0,3]))
+            self.g_layers.add(tf.keras.layers.ReLU())
+            curr_dim = curr_dim // 2
 
-        #128 -> 64
-        self.layers.append(nn.ConvTranspose2d(conv_dim*2, conv_dim, kernel_size=4, stride=2, padding=1, bias=False,device=self.device))
-        self.layers.append(nn.InstanceNorm2d(conv_dim, affine=True, track_running_stats=True,device=self.device))
-        self.layers.append(nn.ReLU(inplace=True))
+        # # Output layer
+        self.g_layers.add(tf.keras.layers.ZeroPadding2D(padding=(3, 3)))
+        self.g_layers.add(tf.keras.layers.Conv2D(filters=3,
+                                                    kernel_size=7,
+                                                    strides=1,
+                                                    use_bias=False,
+                                                    activation='tanh'))
 
-        #64 -> 3
-        self.layers.append(nn.Conv2d(conv_dim, 3, kernel_size=7, stride=1, padding=3, bias=False,device=self.device))
-        self.layers.append(nn.Sigmoid())
+    def call(self, x, c, training = True):
+        c = tf.reshape(c, (tf.shape(c)[0], 1, 1, tf.shape(c)[1]))
+        # print(c.shape)
+        # print(c)
+        c = tf.tile(c, (1, tf.shape(x)[1], tf.shape(x)[2], 1))
 
-    def forward(self, x, c):
-        #x.size = 1x3x300x300 
-        #c.size = 1x5x300x300
-        c = c.view(c.size(0), c.size(1), 1, 1)
-        c = c.repeat(1, 1, x.size(2), x.size(3))
+        # x = tf.reshape(x, (1, tf.shape(x)[0], tf.shape(x)[1], tf.shape(x)[2])) # For testing
+        # print(x.shape)
+        x = tf.concat((x, c), axis=3)
 
-        x = x.float()  # Cast input tensor to float32
-        c = c.float()  # Cast c tensor to float32
-
-        new_x = torch.cat([x, c], dim=1).to(self.device)
-        e = self.layers(new_x)   
-   
-        return e
-
-
-
-     
-        
-
-
-
+        return self.g_layers(x, training = training)
+    
+    def generate_img(self, x, c):
+        if(len(x.shape) < 4):
+            x = tf.expand_dims(x, 0)
+        img = self.call(x,c,training=False)[0]
+        img = img * 0.5 + 0.5
+        return img
