@@ -74,7 +74,8 @@ class ImageLoader():
 
         full_image_set = full_image_set.map(parseImageEntry,
                                             num_parallel_calls=tf.data.AUTOTUNE)
-        full_image_set = full_image_set.shuffle(image_count)
+        if mode == 'train':
+            full_image_set = full_image_set.shuffle(image_count)
         full_image_set = full_image_set.batch(self.batch_size)
 
         return full_image_set
