@@ -11,8 +11,8 @@ from ImageProcessing import ImageLoader
 
 def main(config):
 
-    
-    starGAN = FaceAgingStarGAN(config)
+    starGAN_config = StarGANConfig(config)
+    starGAN = FaceAgingStarGAN(starGAN_config)
 
     if(config.mode != "train"):
         if config.result_dir and not os.path.exists(config.result_dir):
@@ -84,6 +84,6 @@ if __name__ == '__main__':
 
    
 
-    config = StarGANConfig(parser.parse_args())
+    config = parser.parse_args()
     
     main(config)

@@ -211,10 +211,10 @@ class FaceAgingStarGAN():
     def generate_img(self, test_img_path = [], result_dir = None):
         
         img_loader = ImageLoader(16, (128,128))
-        for path in self.config.test_img_path:
+        for path in test_img_path:
             base_path = ""
-            if(self.config.result_dir):
-                base_path = os.path.join(self.config.result_dir, Path(path).stem)
+            if(result_dir):
+                base_path = os.path.join(result_dir, Path(path).stem)
             else:
                 base_path = os.path.join(os.path.dirname(path), Path(path).stem)
             print(base_path)
@@ -271,10 +271,8 @@ class StarGANConfig(object):
         self.log_dir = args.log_dir
         self.model_save_dir = args.model_save_dir
         self.sample_dir = args.sample_dir
-        self.test_img_path = args.test_img_path
         self.D_path = args.D_path
         self.G_path = args.G_path
-        self.result_dir = args.result_dir 
 
         # Miscellaneous.
         self.mode = args.mode
