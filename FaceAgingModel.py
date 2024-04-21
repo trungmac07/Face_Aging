@@ -245,8 +245,6 @@ class StarGANConfig(object):
         self.image_size = args.image_size
         self.g_conv_dim = 64
         self.d_conv_dim = 64
-        self.g_repeat_num = 6
-        self.d_repeat_num = 6
         self.lambda_cls = 1.5 
         self.lambda_rec = 10.9
         self.lambda_gp = 10.1
