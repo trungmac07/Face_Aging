@@ -210,7 +210,7 @@ class FaceAgingStarGAN():
 
     def generate_img(self, test_img_path = [], result_dir = None):
         
-        img_loader = ImageLoader(16, (128,128))
+        img_loader = ImageLoader(16, (self.config.image_size,self.config.image_size))
         for path in test_img_path:
             base_path = ""
             if(result_dir):
@@ -232,17 +232,70 @@ class FaceAgingStarGAN():
                 pil_img = tf.keras.preprocessing.image.array_to_img(new_img)
                 pil_img.save(base_path + "_" + str(i) + ".jpg" )
                 print(base_path + "_" + str(i) + ".jpg" )
-               
 
+
+    def generate_img_UI(self, img, label):
+        img_loader = ImageLoader(16, (self.config.image_size,self.config.image_size))
+        test_img = tf.keras.utils.img_to_array(img.copy(), dtype = float)
+        test_img = img_loader.preprocessImage(test_img, training = False) 
+        labels = {"Juvenile" : 0, "Teenager" : 1, "Middle Age" : 2, "Senior" : 3}
+        trg_vec = tf.one_hot(labels[label], depth=self.config.chan_dim)
+        trg_vec = tf.reshape(trg_vec, (1, tf.shape(trg_vec)[0]))
+        if(len(test_img.shape) < 4):
+            test_img = tf.expand_dims(test_img, 0)
+        #print(test_img.shape)
+        new_img = self.G(test_img,trg_vec,training = False)[0]
+        new_img = new_img * 0.5 + 0.5
+        pil_img = tf.keras.preprocessing.image.array_to_img(new_img)
+        return pil_img
 
             
 
 class StarGANConfig(object):
-    def __init__(self, args):                        
+    def __init__(self, args = None):                        
         
+        if(args == None):
+            self.default_config()
+        else:
+            #  Model configuration.
+            self.chan_dim = args.chan_dim
+            self.image_size = args.image_size
+            self.g_conv_dim = 64
+            self.d_conv_dim = 64
+            self.lambda_cls = 1.5 
+            self.lambda_rec = 10.9
+            self.lambda_gp = 10.1
+
+            # Training configuration.
+            self.batch_size = 16
+            self.num_steps = args.num_steps
+            self.g_lr = 0.00009
+            self.d_lr = 0.00009
+            self.n_critic = args.n_critic
+            self.beta_1 = 0.5
+            self.beta_2 = 0.999
+            self.start_step = args.start_step
+
+            # Step size
+            self.log_step = args.log_step
+            self.sample_step = args.sample_step
+            self.model_save_step = args.model_save_step
+
+            # Directories.
+            self.image_dir = args.image_dir
+            self.log_dir = args.log_dir
+            self.model_save_dir = args.model_save_dir
+            self.sample_dir = args.sample_dir
+            self.D_path = args.D_path
+            self.G_path = args.G_path
+
+            # Miscellaneous.
+            self.mode = args.mode
+
+    def default_config(self):
         #  Model configuration.
-        self.chan_dim = args.chan_dim
-        self.image_size = args.image_size
+        self.chan_dim = 4
+        self.image_size = 128
         self.g_conv_dim = 64
         self.d_conv_dim = 64
         self.lambda_cls = 1.5 
@@ -251,26 +304,26 @@ class StarGANConfig(object):
 
         # Training configuration.
         self.batch_size = 16
-        self.num_steps = args.num_steps
+        self.num_steps = 100000
         self.g_lr = 0.00009
         self.d_lr = 0.00009
-        self.n_critic = args.n_critic
+        self.n_critic = 5
         self.beta_1 = 0.5
         self.beta_2 = 0.999
-        self.start_step = args.start_step
-
+        self.start_step = 0
         # Step size
-        self.log_step = args.log_step
-        self.sample_step = args.sample_step
-        self.model_save_step = args.model_save_step
+        self.log_step = 10
+        self.sample_step = 1000
+        self.model_save_step = 1000
 
         # Directories.
-        self.image_dir = args.image_dir
-        self.log_dir = args.log_dir
-        self.model_save_dir = args.model_save_dir
-        self.sample_dir = args.sample_dir
-        self.D_path = args.D_path
-        self.G_path = args.G_path
+        self.image_dir = "test_img/result"
+        self.log_dir = 'stargan/logs'
+        self.model_save_dir = 'stargan/models'
+        self.sample_dir ='stargan/samples'
+        self.D_path = './model/D'
+        self.G_path = './model/G'
 
         # Miscellaneous.
-        self.mode = args.mode
+        self.mode = 'test'      
+    
