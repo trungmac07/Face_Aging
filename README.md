@@ -1,4 +1,4 @@
-
+![image](https://github.com/trungmac07/Face_Aging/assets/90563429/06ff0a30-ea9a-4549-8c8c-2036c340b200)![image](https://github.com/trungmac07/Face_Aging/assets/90563429/8c44ff31-fc4f-426d-8f50-3f23edb9f2d7)![image](https://github.com/trungmac07/Face_Aging/assets/90563429/ea3d0f67-d8d8-45f5-ba38-430cd0dd8cf2)
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
@@ -14,6 +14,9 @@ StarGAN emerges as a groundbreaking solution, addressing the shortcomings of pre
 
 ![Four Groups](resources/four_groups.png)
 
+Our model use images in All Age Faces Dataset for training (size of 128x128) with 4 labels: Juvenile, Teenager, Middle Age, Senior.
+
+Jingchun Cheng dataset - All Age Faces Dataset: https://github.com/JingchunCheng/All-Age-Faces-Dataset.git 
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -69,4 +72,3 @@ Email:
 - quannguyen2153@gmail.com
 
 Project Link: [https://github.com/trungmac07/Face_Aging](https://github.com/trungmac07/Face_Aging)
-
