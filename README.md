@@ -1,4 +1,4 @@
-![image](https://github.com/trungmac07/Face_Aging/assets/90563429/06ff0a30-ea9a-4549-8c8c-2036c340b200)![image](https://github.com/trungmac07/Face_Aging/assets/90563429/8c44ff31-fc4f-426d-8f50-3f23edb9f2d7)![image](https://github.com/trungmac07/Face_Aging/assets/90563429/ea3d0f67-d8d8-45f5-ba38-430cd0dd8cf2)
+
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
