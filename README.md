@@ -5,12 +5,14 @@
   <h1 align="center">Face Aging Model Using StarGAN</h1>
 </div>
 
+![Face Aging](resources/face_aging.png)
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
 StarGAN emerges as a groundbreaking solution, addressing the shortcomings of previous methods. This deep learning model excels at image-to-image translation tasks. Unlike traditional approaches that necessitate a separate model for each aging transformation, StarGAN utilizes a single unified model.  By leveraging conditional GANs, StarGAN can generate realistic aged faces based on specific age labels. This versatility allows for diverse image translations without the need for domain-specific models.
 
+![Four Groups](resources/four_groups.png)
 
 
 <!-- GETTING STARTED -->
